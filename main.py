@@ -30,7 +30,7 @@ def CreateTileList(IN_PATH):
     for tile in os.listdir(str(IN_PATH)):
         tileList.append(tile)
         tileList.sort()
-        return tileList
+    return tileList
 
 #-----------------------------------------------------------------------
 
