@@ -24,20 +24,18 @@ gsetup.init(GISBASE, GISDB, LOC, MAPSET)
 
 
 """
-https://grass.osgeo.org/grass75/manuals/r.sun.html
+From: https://grass.osgeo.org/grass75/manuals/r.sun.html
 r.sun works in two modes: In the first mode it calculates for the set 
 local time a solar incidence angle [degrees] and solar irradiance values 
 [W.m-2]. In the second mode daily sums of solar radiation [Wh.m-2.day-1] 
-are computed within a set day. By a scripting the two modes can be used 
-separately or in a combination to provide estimates for any desired time 
-interval.
+are computed within a set day. 
 """
 
 #-----------------------------------------------------------------------
 
 def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     """
-    Calculates daily sum of slar radiation for each month. Default value 
+    Calculates daily sum of solar radiation for each month. Default value 
     is adopted for albedo.
     """
     
