@@ -42,7 +42,7 @@ def rastImport(IN_PATH, raster, grassname):
 #-----------------------------------------------------------------------
 
 def rastExport(OUT_PATH, grassname, filename):
-    rasterpath = os.path.join(OUT_PATH, filename)
+    rasterpath = os.path.join(OUT_PATH, filename, '.tif')
     grass.run_command('r.out.gdal', input = grassname,
                       output = rasterpath,
                       format = 'GTiff')
@@ -71,16 +71,19 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     # calculate horizon angles (to speed up the subsequent r.sun calculation)
     # step=30 produces 12 maps
     # in lat-lon coordinate system, bufferzone is expressed in degree unit
+    r_horizon = r_elevation + '_horangle' 
     grass.run_command('r.horizon', elevation = r_elevation, 
                       step = 30, 
                       bufferzone = 1, 
-                      output = 'horangle', 
+                      output = r_horizon, 
                       maxdistance = 5000)
 
     # slope + aspect
+    r_aspect = r_elevation + '_aspect'
+    r_slope = r_elevation + '_slope'
     grass.run_command('r.slope.aspect', elevation = r_elevation,
-                      aspect = 'aspect.dem', 
-                      slope = 'slope.dem')
+                      aspect = r_aspect, 
+                      slope = r_slope)
                       
     # List of days for which we want to calculate global irradiation
     # The year is only indicated to tell whether it is a leap year,
@@ -94,25 +97,32 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
             date2greg(15,'Nov',2017), date2greg(15,'Dec',2017),]
 
     # calculate global radiation for 12 days within 12 months at 2p.m.
-    # result: output global (total) irradiance/irradiation [W.m-2] for given day/time
+    # result: output global (total) irradiance/irradiation [W.m-2] for 
+    # given day/time
     for day in days:
-        basename = 'horangle' + str(day)
+        r_glob_rad = r_elevation + '_glob_rad_' + day
         grass.run_command('r.sun', elevation = r_elevation, 
-                          horizon_basename = basename, 
+                          horizon_basename = r_horizon, 
                           horizon_step = 12, 
-                          aspect = 'aspect.dem', 
-                          slope = 'slope.dem', 
-                          glob_rad = 'global_rad', 
+                          aspect = r_aspect, 
+                          slope = r_slope, 
+                          glob_rad = r_glob_rad, 
                           day = day, 
                           time = 14)
-         
-    #r.univar global_rad
-    
-    # Export
-    
+        # Export
+        rastExport(OUT_PATH, r_glob_rad, r_glob_rad)
+        
+        # Cleanup
+        rastCleanup(r_glob_rad)
     
     # Cleanup
-    
+    patt = r_horizon + '*'
+    grass.run_command('g.remove', type = 'raster',
+                      pattern = patt, 
+                      flags = 'f')
+    rastCleanup(r_aspect)
+    rastCleanup(r_slope)
+    rastCleanup(r_elevation)
     
 #-----------------------------------------------------------------------
     
