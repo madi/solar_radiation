@@ -11,8 +11,8 @@ from date_to_gregorian import *
 # Setting up GRASS GIS env
 GISBASE = "/usr/local/grass-7.5.svn"
 GISDB = os.path.join(os.path.expanduser("~"), "grassdata")
-LOC = "WGS84"
-MAPSET = "tmp"
+LOC = "prova_gmted"
+MAPSET = "PERMANENT"
 
 os.environ['GISDBASE'] = GISDB
 os.environ['GISBASE'] = GISBASE
@@ -33,25 +33,52 @@ are computed within a set day.
 
 #-----------------------------------------------------------------------
 
+def rastImport(IN_PATH, raster, grassname):
+    rasterpath = os.path.join(IN_PATH, raster)
+    grass.read_command('r.external', input = rasterpath, 
+                       output = grassname,
+                       overwrite = True)
+    
+#-----------------------------------------------------------------------
+
+def rastExport(OUT_PATH, grassname, filename):
+    rasterpath = os.path.join(OUT_PATH, filename)
+    grass.run_command('r.out.gdal', input = grassname,
+                      output = rasterpath,
+                      format = 'GTiff')
+
+#-----------------------------------------------------------------------
+
+def rastCleanup(grassname):
+    grass.run_command('g.remove', type = 'raster',
+                      name = grassname, 
+                      flags = 'f')
+
+#-----------------------------------------------------------------------
+
 def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     """
     Calculates daily sum of solar radiation for each month. Default value 
     is adopted for albedo.
     """
+    # Import tile of elevation map
+    r_elevation = elevation.split('.')[0]
+    rastImport(IN_PATH, elevation, r_elevation)
     
     # Set computational region to fit to elevation map
-    grass.read_command('g.region', flags = 'p', raster = elevation)
+    grass.read_command('g.region', flags = 'p', raster = r_elevation)
     
     # calculate horizon angles (to speed up the subsequent r.sun calculation)
     # step=30 produces 12 maps
-    grass.run_command('r.horizon', elevation = elevation, 
+    # in lat-lon coordinate system, bufferzone is expressed in degree unit
+    grass.run_command('r.horizon', elevation = r_elevation, 
                       step = 30, 
-                      bufferzone = 200, 
+                      bufferzone = 1, 
                       output = 'horangle', 
                       maxdistance = 5000)
 
     # slope + aspect
-    grass.run_command('r.slope.aspect', elevation = elevation,
+    grass.run_command('r.slope.aspect', elevation = r_elevation,
                       aspect = 'aspect.dem', 
                       slope = 'slope.dem')
                       
@@ -69,19 +96,22 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     # calculate global radiation for 12 days within 12 months at 2p.m.
     # result: output global (total) irradiance/irradiation [W.m-2] for given day/time
     for day in days:
-        grass.run_command('r.sun', elevation = elevation, 
-                          horizon_basename = 'horangle', 
+        basename = 'horangle' + str(day)
+        grass.run_command('r.sun', elevation = r_elevation, 
+                          horizon_basename = basename, 
                           horizon_step = 12, 
                           aspect = 'aspect.dem', 
                           slope = 'slope.dem', 
                           glob_rad = 'global_rad', 
                           day = day, 
                           time = 14)
-        
-        
          
     #r.univar global_rad
     
+    # Export
+    
+    
+    # Cleanup
     
     
 #-----------------------------------------------------------------------
