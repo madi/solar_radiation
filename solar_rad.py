@@ -83,7 +83,8 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     r_slope = r_elevation + '_slope'
     grass.run_command('r.slope.aspect', elevation = r_elevation,
                       aspect = r_aspect, 
-                      slope = r_slope)
+                      slope = r_slope,
+                      overwrite = True)
                       
     # List of days for which we want to calculate global irradiation
     # The year is only indicated to tell whether it is a leap year,
@@ -100,7 +101,7 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     # result: output global (total) irradiance/irradiation [W.m-2] for 
     # given day/time
     for day in days:
-        r_glob_rad = r_elevation + '_glob_rad_' + day
+        r_glob_rad = r_elevation + '_glob_rad_' + str(day)
         grass.run_command('r.sun', elevation = r_elevation, 
                           horizon_basename = r_horizon, 
                           horizon_step = 12, 
@@ -119,6 +120,9 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     patt = r_horizon + '*'
     grass.run_command('g.remove', type = 'raster',
                       pattern = patt, 
+                      flags = 'f')
+    grass.run_command('g.remove', type = 'raster',
+                      pattern = 'horangle*', 
                       flags = 'f')
     rastCleanup(r_aspect)
     rastCleanup(r_slope)
