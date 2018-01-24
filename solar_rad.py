@@ -42,16 +42,17 @@ def rastImport(IN_PATH, raster, grassname):
 #-----------------------------------------------------------------------
 
 def rastExport(OUT_PATH, grassname, filename):
-    rasterpath = os.path.join(OUT_PATH, filename, '.tif')
+    rasterpath = os.path.join(OUT_PATH, filename + '.tif')
     grass.run_command('r.out.gdal', input = grassname,
                       output = rasterpath,
                       format = 'GTiff')
 
 #-----------------------------------------------------------------------
 
-def rastCleanup(grassname):
+def rastCleanup(pattern):
+    patt = pattern + '*'
     grass.run_command('g.remove', type = 'raster',
-                      name = grassname, 
+                      pattern = patt, 
                       flags = 'f')
 
 #-----------------------------------------------------------------------
@@ -100,32 +101,22 @@ def CalcSolarRad(IN_PATH, OUT_PATH, elevation):
     # calculate global radiation for 12 days within 12 months at 2p.m.
     # result: output global (total) irradiance/irradiation [W.m-2] for 
     # given day/time
+    
     for day in days:
         r_glob_rad = r_elevation + '_glob_rad_' + str(day)
         grass.run_command('r.sun', elevation = r_elevation, 
                           horizon_basename = r_horizon, 
-                          horizon_step = 12, 
+                          horizon_step = 30, 
                           aspect = r_aspect, 
                           slope = r_slope, 
                           glob_rad = r_glob_rad, 
                           day = day, 
-                          time = 14)
+                          time = 14,
+                          overwrite = True)
         # Export
         rastExport(OUT_PATH, r_glob_rad, r_glob_rad)
-        
-        # Cleanup
-        rastCleanup(r_glob_rad)
     
     # Cleanup
-    patt = r_horizon + '*'
-    grass.run_command('g.remove', type = 'raster',
-                      pattern = patt, 
-                      flags = 'f')
-    grass.run_command('g.remove', type = 'raster',
-                      pattern = 'horangle*', 
-                      flags = 'f')
-    rastCleanup(r_aspect)
-    rastCleanup(r_slope)
     rastCleanup(r_elevation)
     
 #-----------------------------------------------------------------------
