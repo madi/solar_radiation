@@ -1,3 +1,5 @@
+# coding: utf-8
+
 __author__ = "Margherita Di Leo"
 __license__ = "GPL v.3"
 __version__ = "0.1"
